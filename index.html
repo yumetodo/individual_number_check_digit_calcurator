@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>マイナンバーのチェックデジットをWebassemblyで計算する</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css" integrity="sha384-eYUmD1FFkORGrJdmrD37Z5LUEElTzF32+UI3jkzt7C1vpmUGo5KOVvb3Z5LeZHky" crossorigin="anonymous">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mithril/1.1.6/mithril.min.js" integrity="sha384-WedpdoUbnuqy+dSCxrl0TWUm/4GG4J8s4EixXQb1KVETo46oAzTN5jagrXH3hRQD" crossorigin="anonymous"></script>
+    <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+    <script>
+        var Module = {};
+        Module.onRuntimeInitialized = () => {
+            function ready(loaded) {
+                if (['interactive', 'complete'].includes(document.readyState)) {
+                    loaded();
+                } else {
+                    document.addEventListener('DOMContentLoaded', loaded);
+                }
+            }
+            class IndividualNumberCheckDigitCalcurator {
+                constructor(){
+                    this.result = "none";
+                    this.individualNumber = "";
+                }
+                calc(){
+                    if(typeof this.individualNumber !== "string" || this.individualNumber.length !== 11) return;
+                    const re = Module.IndividualNumberCheckDigitCalcurator.calcCheckDigit(this.individualNumber);
+                    console.log(this.result);
+                    if(re.has_value()){
+                        console.log(this.result);
+                        this.result = re.value().toString();
+                    }
+                    console.log(this.result);
+                }
+                view(){
+                    return m("div", [
+                        m("section", [
+                            m("h3", "マイナンバーの末尾1桁以外"),
+                            m("input", {
+                                "type": "text",
+                                "oninput": m.withAttr("value", individualNumber => {
+                                    this.individualNumber = individualNumber;
+                                    this.calc();
+                                }),
+                                "value": this.individualNumber,
+                                "pattern": /\d{11}/.source
+                            })
+                        ]),
+                        m("section", [
+                            m("h3", "チェックデジット"),
+                            m("p", this.result)
+                        ])
+                    ])
+                }
+            }
+            ready(() => {
+                m.mount(document.getElementById("calc"), IndividualNumberCheckDigitCalcurator);
+            })
+        }
+    </script>
+    <script src="index.js"></script>
+</head>
+<body>
+    <h1>マイナンバーのチェックデジットをWebassemblyで計算する</h1>
+    <section>
+        <h2>はじめに</h2>
+        <p>私は日本在住なのだが、マイナンバー制度(ndividual Number)が始まってだいぶ経つ。</p>
+        <p>
+            以前、<br>
+            <a href="https://qiita.com/yumetodo/items/600ca0df422010cbc4c1">C++でマイナンバーのチェックデジットを計算する</a><br>
+            という記事をQitaに投稿したのだが、オンライン上で計算できてもいいだろうと思った。
+        </p>
+        <p>普通にJavaScriptで書くのはもうたくさんの人がやっている気がするので、C++で書いてWebassemblyに変換してブラウザ上で実行できるようにする。</p>
+        <p>これにより興味を持つ人が増え、10％程度しかないマイナンバーカードの普及率を上げることができれば幸いだ。</p>
+        <p>
+            マイナンバーカードの申請はオンラインからできる。<br>
+            <a href="https://www.kojinbango-card.go.jp/kofushinse/pc.html">マイナンバーカード総合サイト／パソコンによる申請方法</a><br>
+            確定申告にも使えるのでぜひ申請してみよう！
+        </p>
+    </section>
+    <section>
+        <h2>計算機</h2>
+        <p>
+            <b>計算はあなたのブラウザ上で完結します。入力した情報が外部に送信されることはありません。</b><br>
+            また計算に使用しているプログラムはすべてBoost Software License 1.0で公開されています。<br>
+            したがってあなたはBoost Software License 1.0の要求を満たす範囲で自由に当Webページを複製・改変・再配布できます。<br>
+            Boost Software License 1.0の全文は<br>
+            <a href="https://www.boost.org/LICENSE_1_0.txt">https://www.boost.org/LICENSE_1_0.txt</a><br>
+            にて確認することができます。
+        </p>
+        <div id="calc"></div>
+    </section>
+    <section>
+        <h2>マイナンバーのチェックデジットをブラウザ上で計算することが法律に抵触するかどうか</h2>
+        <p>気になるニュースがTwitter上で話題になっている。</p>
+        <blockquote class="twitter-tweet" data-lang="ja"><p lang="ja" dir="ltr">マイナンバーのチェックディジットを計算するJavaScriptのページを公開していましたが，個人情報保護委員会様からご指摘をいただきましたので，ソースコードの提示だけにしました <a href="https://t.co/J9CPEiKUQw">https://t.co/J9CPEiKUQw</a></p>&mdash; Haruhiko Okumura (@h_okumura) <a href="https://twitter.com/h_okumura/status/1026702469093441536?ref_src=twsrc%5Etfw">2018年8月7日</a></blockquote>
+        <p>マイナンバーの収集を行っていないWebサイトを2015年に立ち上げたが、つい最近になって個人情報保護委員会から</p>
+        <blockquote>マイナンバー収集を誤認するようなページは好ましくないのではないか</blockquote>
+        <p>などと指摘が来たのだそうだ。</p>
+        <p>実に馬鹿らしい。入力されたマイナンバーを送信させればそれは確かにマイナンバーの収集と言える可能性もあるだろうが、その件はそうではなく、ブラウザ上で完結していたそうだ。なにも問題はない。</p>
+        <p>類似事案も報告されている。</p>
+        <blockquote class="twitter-tweet" data-lang="ja"><p lang="ja" dir="ltr">同じくカシオの高精度計算サイト　<a href="https://t.co/5bEocxKLiB">https://t.co/5bEocxKLiB</a>　にマイナンバーのチェックディジットを計算する自作式を作ったところ、メールで連絡が来て削除されました。この文言が追加になった<br>・個人情報保護委員会の指導により、個人情報（マイナンバーなど）を扱う自作式の作成を禁止しております。 <a href="https://t.co/328n3lOkSj">https://t.co/328n3lOkSj</a></p>&mdash; tomo (@tonagai) <a href="https://twitter.com/tonagai/status/1026839162039627776?ref_src=twsrc%5Etfw">2018年8月7日</a></blockquote>
+        <p>独立行政法人産業技術総合研究所情報セキュリティ研究センター主任研究員<b>でもある</b>高木浩光先生はまた<b>Twitterで</b>見解を示している</p>
+        <blockquote class="twitter-tweet" data-lang="ja"><p lang="ja" dir="ltr">べつに「マイナンバー収集を誤認するようなページ」になっていなければ、入力欄を設置していてかまわないというべき。騙す輩が存在し得ることはまた別のこと。無用な萎縮は、田舎警察を思い上がらせることになるだけ。<a href="https://t.co/IBgZSkqDMH">https://t.co/IBgZSkqDMH</a></p>&mdash; Hiromitsu Takagi (@HiromitsuTakagi) <a href="https://twitter.com/HiromitsuTakagi/status/1026794454730981376?ref_src=twsrc%5Etfw">2018年8月7日</a></blockquote>
+        <blockquote class="twitter-tweet" data-lang="ja"><p lang="ja" dir="ltr">もう少し精密に検討しておくとしよう。<a href="https://t.co/NGywwARPyO">https://t.co/NGywwARPyO</a><br><br>よく見てみれば、「収集を誤認するような」（収集しているものと誤認する）ならいいじゃないかという話がある。収集されないと誤認するような（実際は収集しているのに）ものの方が問題である。しかし、…</p>&mdash; Hiromitsu Takagi (@HiromitsuTakagi) <a href="https://twitter.com/HiromitsuTakagi/status/1026843208725057536?ref_src=twsrc%5Etfw">2018年8月7日</a></blockquote>
+        <blockquote class="twitter-tweet" data-lang="ja"><p lang="ja" dir="ltr">…しかし、（収集していないのに）「収集しているものと誤認」されるようなサイトが適法だとして乱立すると、「このように収集してもいいんだ」という誤解が広まるから「やめてくれ」とPPCは言いたいのかもしれない。しかしそれは危険な兆候であり、見過ごせないというのが私の見解。</p>&mdash; Hiromitsu Takagi (@HiromitsuTakagi) <a href="https://twitter.com/HiromitsuTakagi/status/1026843913745657856?ref_src=twsrc%5Etfw">2018年8月7日</a></blockquote>
+        <blockquote class="twitter-tweet" data-lang="ja"><p lang="ja" dir="ltr">ここで、マイナンバー占いの場合と比較してみよう。マイナンバー占いが、今回のものと同様に、入力された番号を送信せず、Webページ内でJavaScriptにより演算して結果を表示するだけのものだったら、どうだろうか。これは、PPCからやめるように言われてもしかたのないものだと感じられる。違いは何か。</p>&mdash; Hiromitsu Takagi (@HiromitsuTakagi) <a href="https://twitter.com/HiromitsuTakagi/status/1026844458023698432?ref_src=twsrc%5Etfw">2018年8月7日</a></blockquote>
+        <blockquote class="twitter-tweet" data-lang="ja"><p lang="ja" dir="ltr">マイナンバー法が禁止するのは取得だけではない。「提供の求め」も禁止している（15条）。マイナンバーカードの裏面をことさら見せるよう求めることが違法とされる。マイナンバー占いが違法とされ得るのはまずこの「提供の求め」に当たるからだろう。「占ってあげるから記入して」と求めているわけだ。</p>&mdash; Hiromitsu Takagi (@HiromitsuTakagi) <a href="https://twitter.com/HiromitsuTakagi/status/1026846625556180997?ref_src=twsrc%5Etfw">2018年8月7日</a></blockquote>
+        <blockquote class="twitter-tweet" data-lang="ja"><p lang="ja" dir="ltr">それに対して、今回の「マイナンバーのチェックディジット計算」は、「記入して」と求めているわけではない。チェックディジットを計算してみたい人向けに計算機が用意されているだけである。これは15条が言う「提供の求め」に当たらないと考えるべきだ。<br><br>修正前の当該サイト<a href="https://t.co/PfBPakV8YX">https://t.co/PfBPakV8YX</a></p>&mdash; Hiromitsu Takagi (@HiromitsuTakagi) <a href="https://twitter.com/HiromitsuTakagi/status/1026847639617200128?ref_src=twsrc%5Etfw">2018年8月7日</a></blockquote>
+        <blockquote class="twitter-tweet" data-lang="ja"><p lang="ja" dir="ltr">続き。<br>話を戻して、「「このように収集してもいいんだ」という誤解が広まる」という点について。<a href="https://t.co/DSQghR7Q8y">https://t.co/DSQghR7Q8y</a></p>&mdash; Hiromitsu Takagi (@HiromitsuTakagi) <a href="https://twitter.com/HiromitsuTakagi/status/1027185716332122112?ref_src=twsrc%5Etfw">2018年8月8日</a></blockquote>
+        <blockquote class="twitter-tweet" data-lang="ja"><p lang="ja" dir="ltr">誤解が広まるからという理由で政府がやめなさいと圧力をかけるのは、表現の自由に対する攻撃であり、見過ごしてはいけない。<br>今回のサイトは、 <a href="https://t.co/nrPtaInUBt">https://t.co/nrPtaInUBt</a> の通り、「JavaScriptで書かれていますので，入力されたものはネットに流れません」と説明しており、誤認させるものではなかった。</p>&mdash; Hiromitsu Takagi (@HiromitsuTakagi) <a href="https://twitter.com/HiromitsuTakagi/status/1027186759879159808?ref_src=twsrc%5Etfw">2018年8月8日</a></blockquote>
+        <blockquote class="twitter-tweet" data-lang="ja"><p lang="ja" dir="ltr">結局、このようなケースで問題があるかのように見えるのは、「取得」規制の方ではなく「提供の求め」規制の方であり、上に書いたように、「マイナンバー占い」では「提供の求め」に当たるが、単に「マイナンバーのチェックディジット計算」の計算機が置いてあるだけの本件は、これに当たらないだろう。</p>&mdash; Hiromitsu Takagi (@HiromitsuTakagi) <a href="https://twitter.com/HiromitsuTakagi/status/1027190156791402500?ref_src=twsrc%5Etfw">2018年8月8日</a></blockquote>
+        <blockquote class="twitter-tweet" data-lang="ja"><p lang="ja" dir="ltr">このような、表現の自由に無頓着なPPCの慎重を欠く活動は、昨今、田舎警察が不正指令電磁的記録作成罪を濫用しまくり始めたこととも通じる。Wizard Bibleの事案はトロイの木馬として完成していない（不能犯にしかならない）ものを不正指令電磁的記録と決めつけた事案だった。<a href="https://t.co/LyrX3uSXtr">https://t.co/LyrX3uSXtr</a></p>&mdash; Hiromitsu Takagi (@HiromitsuTakagi) <a href="https://twitter.com/HiromitsuTakagi/status/1027202400799490049?ref_src=twsrc%5Etfw">2018年8月8日</a></blockquote>
+    </section>
+    <footer>
+        <p>Copyright © 2018 yumetodo Boost Software License 1.0</p>
+    </footer>
+</body>
+</html>
